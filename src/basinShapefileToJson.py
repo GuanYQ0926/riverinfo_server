@@ -39,6 +39,7 @@ class BasinShpToJson:
             temp_bcode = mesh['bcode']
             if temp_bcode not in self.basinCode:
                 self.basinCode.append(temp_bcode)
+        print(self.basinCode)
         print(len(self.basinCode))
 
     def saveMeshDataToImg(self):
@@ -69,7 +70,8 @@ class BasinShpToJson:
             for j in xrange(self.imgWidth):
                 try:
                     mesh_image[i, j] = img_info[
-                        (self.imgWidthLons[j], self.imgHeightLats[i])]
+                        (self.imgWidthLons[j],
+                         self.imgHeightLats[self.imgHeight - i - 1])]
                 except:
                     mesh_image[i, j] = 255
         self.basinImg = mesh_image
