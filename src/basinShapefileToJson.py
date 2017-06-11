@@ -4,14 +4,14 @@ import sys
 sys.path.append('/usr/local/lib/python2.7/site-packages')
 import cv2
 import numpy as np
-from matplotlib import pyplot as plt
 
 
 class BasinShpToJson:
 
-    def __init__(self, shpFilepath, jsonFilepath):
+    def __init__(self, shpFilepath, jsonFilepath, basinImagePath):
         self.shpFilepath = shpFilepath
         self.jsonFilepath = jsonFilepath
+        self.basinImagePath = basinImagePath
         self.mesh_list = []
         self.basinCode = []
         # iamge info
@@ -76,7 +76,7 @@ class BasinShpToJson:
                     mesh_image[i, j] = 255
         self.basinImg = mesh_image
         # save the image
-        cv2.imwrite('../data/img/basin.png', mesh_image)
+        cv2.imwrite(self.basinImagePath, self.basinImg)
 
     def findCountours(self):
         # image value range [0, len(self.basinCode)]*4
@@ -91,44 +91,49 @@ class BasinShpToJson:
         for row in xrange(self.imgHeight):
             for col in xrange(self.imgWidth):
                 if self.basinImg[row][col] == value:
+                    isRectContours = False
                     top = right = bot = left = value
                     # top
                     try:
                         top = self.basinImg[row - 1][col]
                     except:
-                        pass
+                        isRectContours = True
                     # right
                     try:
                         right = self.basinImg[row][col + 1]
                     except:
-                        pass
+                        isRectContours = True
                     # bot
                     try:
                         bot = self.basinImg[row + 1][col]
                     except:
-                        pass
+                        isRectContours = True
                     # left
                     try:
                         left = self.basinImg[row][col - 1]
                     except:
-                        pass
+                        isRectContours = True
                     if top != value or right != value or bot != value or \
-                            left != value:
+                            left != value or isRectContours:
                         coord_list.append(
-                            [self.imgHeightLats[row], self.imgWidthLons[col]])
+                            [self.imgHeightLats[self.imgHeight - 1 - row],
+                             self.imgWidthLons[col]])
         return coord_list
 
     def saveToJson(self):
         with open(self.jsonFilepath, 'w') as f:
-            json.dump(self.bcode_contours, f)
+            dumpout = dict(basin_code=self.basinCode,
+                           bcode_contours=self.bcode_contours)
+            json.dump(dumpout, f)
 
 
 if __name__ == '__main__':
     shpFilepaths = [
-        '../data/shapefile/basin/nagoya_gifu/W07-09_5236-jgd_ValleyMesh.shp']
-    jsonFilepaths = ['../data/jsonfile/basin/gifu_nagoya_basin.json']
+        '../data/shapefile/basin/gifu_e/W07-09_5237-jgd_ValleyMesh.shp']
+    jsonFilepaths = ['../data/jsonfile/basin/gifu_e.json']
+    basinImagePath = '../data/img/gifu_e.png'
     for shpFilepath, jsonFilepath in zip(shpFilepaths, jsonFilepaths):
-        processor = BasinShpToJson(shpFilepath, jsonFilepath)  # init
+        processor = BasinShpToJson(shpFilepath, jsonFilepath, basinImagePath)
         processor.unpackMeshData()  # convert data into python format
         processor.genBasinCodeList()  # create list that decide matrix value
         processor.saveMeshDataToImg()  # create matrx(img) and get basic info
